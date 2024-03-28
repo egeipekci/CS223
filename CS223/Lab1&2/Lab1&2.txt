@@ -1,0 +1,95 @@
+//the half adder module in behavioral style
+
+module halfadder( input logic a, b,
+output logic sum, Cout
+);
+assign sum = a ^ b;
+assign Cout = a & b;
+endmodule
+
+//testbench
+
+module testbench();
+logic a,b, sum,Cout;
+halfadder dut( a, b , sum, Cout );
+initial begin a=0; b=0; #10;
+b=1; #10;
+a=1; b=0; #10; b=1;
+end
+endmodule
+
+//the half subtractor module in behavioral style
+
+module halfsubtractor( input logic a, b, 
+output logic D, Bout
+);
+assign D = a ^ b;
+assign Bout = ~a & b;
+endmodule
+
+//testbench
+module testbench();
+logic a,b, D,Bout;
+halfsubtractor dut( a, b , D,Bout );
+initial begin a=0; b=0; #10;
+b=1; #10;
+a=1; b=0; #10; b=1;
+end
+endmodule
+
+//the full adder module in structural style
+
+module OR( input logic a,b, output logic z ); 
+assign z = a || b;
+endmodule
+
+module fulladder( input logic a, b,cin,
+output logic sum, cout
+);
+logic s1,c1,s2,c2,
+halfadder ha1(a,b, s1,c1); 
+halfadder ha2(s1,cin, sum,c2); 
+OR orgate1(c1, c2, cout);
+endmodule
+
+//testbench
+module testbench(); 
+logic a,b, Cin, sum,Cout;
+fulladder uut( a, b , Cin, sum, Cout );
+initial begin
+a=0; b=0; Cin=0; #10; 
+Cin=1; #10;
+b=1; Cin=0; #10;
+Cin=1; #10;
+a=1; b=0; Cin=0; #10; Cin=1; #10;
+b=1; Cin=0; #10;
+Cin=1; #10;
+end
+endmodule
+
+//the full subtractor module in structural style
+
+module OR( input logic a,b, output logic z ); 
+assign z = a || b;
+endmodule
+
+module full_subtractor( input logic a, b, Bin, output logic D, Bout );
+logic d1,b1,b2,d2;
+halfsubtractor hs1(a,b, d1,b1); 
+halfsubtractor hs2(d1,Bin, D,b2); 
+OR orgate1(b1, b2, Bout);
+Endmodule
+
+//testbench
+module testbench(); 
+logic a,b, Bin, D,Bout;
+full_subtractor uut( a, b , Bin, D, Bout );
+initial begin
+a=0; b=0; Bin=0; #10; Bin=1; #10;
+b=1; Bin=0; #10;
+Bin=1; #10;
+a=1; b=0; Bin=0; #10; Bin=1; #10;
+b=1; Bin=0; #10;
+Bin=1; #10;
+end
+endmodule

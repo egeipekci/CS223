@@ -1,0 +1,239 @@
+
+// 2-TO-FOUR DECODER MODULE
+
+module one_to_two_decoder(
+input logic  d, 
+input logic en,
+output logic [1:0]y
+    );
+    
+    
+    always @ ( d or en)
+    if( en == 1'b1 )
+    begin
+   
+    casez(d)  
+    1'b0 : y = 2'b01;
+    1'b1 : y = 2'b10;
+    endcase 
+    end
+    
+    else
+    begin
+     y = 2'b00;
+    end
+endmodule
+
+
+module two_to_four_decoder(
+input logic [1:0]d,
+input logic en,
+output logic [3:0]y
+
+    );
+    logic [1:0]t;
+    one_to_two_decoder d1(d[1], en,t );
+    one_to_two_decoder d2(d[0], t[0], y[1:0] );
+    one_to_two_decoder d3( d[0], t[1], y[3:2]);
+    
+    
+endmodule
+
+// TESTBENCH FOR 2-TO-4 DECODER
+module testbench(
+
+    );
+ logic [1:0]d;
+ logic en;
+ logic [3:0]y;
+ 
+ 
+    two_to_four_decoder uut(d,en,y);
+    
+
+
+initial begin
+    en=0; #10;
+    d[1]=0; d[0]=0; ; #10;
+    d[0]=1; #10;
+    d[1]=1; d[0]=0; #10;
+    d[0]=1; #10;
+    en=1; #10;
+    d[1]=0; d[0]=0; ; #10;
+    d[0]=1; #10;
+    d[1]=1; d[0]=0; #10;
+    d[0]=1; #10;
+    end
+endmodule
+
+
+// LAB FUNCTION
+
+module one_to_two_decoder(
+input logic  d, 
+input logic en,
+output logic [1:0]y
+    );
+    
+    
+    always @ ( d or en)
+    if( en == 1'b1 )
+    begin
+   
+    casez(d)  
+    1'b0 : y = 2'b01;
+    1'b1 : y = 2'b10;
+    endcase 
+    end
+    
+    else
+    begin
+     y = 2'b00;
+    end
+endmodule
+
+
+module two_to_four_decoder(
+input logic [1:0]d,
+input logic en,
+output logic [3:0]y
+
+    );
+    logic [1:0]t;
+    one_to_two_decoder d1(d[1], en,t );
+    one_to_two_decoder d2(d[0], t[0], y[1:0] );
+    one_to_two_decoder d3( d[0], t[1], y[3:2]);
+    
+    
+endmodule
+
+module AND( 
+    input logic a,b, 
+    output logic v
+    );
+    assign v = a & b;
+endmodule
+
+module INV(
+    input logic a,
+    output logic y
+    );
+    assign y = ~a;
+endmodule
+
+module OR(
+    input logic a,b,  
+    output logic z
+    );
+    
+    assign z = a || b;
+endmodule
+
+module twoToOneMux(
+input logic [1:0]m,
+input logic s,
+output logic y
+    );
+    always @ (s)
+    if ( s == 0 )
+        y = m[0];
+    else
+        y = m[1];
+endmodule
+
+module fourToOneMux(
+input logic [3:0]m,
+input logic [1:0]s,
+output logic y
+    );
+    logic y1, y2;
+    
+    twoToOneMux m1( m[1:0], s[0], y1 );
+    twoToOneMux m2( m[3:2], s[0], y2 );
+
+    logic [1:0]temp;
+    assign temp[0] = y1;
+    assign temp[1] = y2;
+    
+    twoToOneMux m3( temp, s[1], y) ;
+endmodule
+
+module eight_to_one_mux( 
+    input logic [7:0]m,
+    input logic [2:0]s3,
+    output logic y
+    );
+    logic y1, y2, y3, y4, y5;
+
+    fourToOneMux mux1( m[3:0],s3[1:0], y1 );
+    INV inv1( s3[2], y5 );
+    AND and1(y1, y5, y3 );
+    
+    fourToOneMux mux2( m[7:4],s3[1:0], y2 );
+    AND and2(y2, s3[2], y4 );
+    OR or1( y3, y4, y);
+endmodule
+
+module mux2(
+    input logic a,b,c,d,
+   output logic y
+    );
+        logic [3:0]o;    
+        logic [2:0]s;
+        logic [1:0]s1;
+        logic [7:0]m;
+    
+        assign s[2] = d;
+        assign s[1] = c;
+        assign s[0] = a;
+        
+        assign s1[1] = b;
+        assign s1[0] = d;
+          two_to_four_decoder decoder(s1, 1, o);
+        assign m[0] = o[0];
+        assign m[1] = 1;
+        assign m[2] = 1;
+        assign m[3] = o[0];
+        assign m[4] = o[3];
+        assign m[5] = o[3];
+        assign m[6] = 0;
+        assign m[7] = o[3];
+
+      
+        eight_to_one_mux mux(m,s,y);
+        
+endmodule
+
+
+
+
+// TRSTBENCH FOR 8-TO-1 MUX
+
+module testbench(
+
+    );
+    
+    logic [7:0]m;
+    logic [2:0]s;
+    logic y;
+    
+    assign m = 8'b01010101;
+   
+ 
+    eight_to_one_mux dut(m,s,y);
+    
+    initial begin
+    
+     
+        s[0]=0;  s[1] = 0;   s[2]=0; #10;
+        s[0] = 1;#10;
+        s[0]=0; s[1]=1; #10;
+        s[0]=1; #10;
+        s[0]=0;  s[1] = 0;   s[2]=1; #10;
+        s[0]=1; #10;
+        s[0]=0;  s[1] = 1; #10; 
+        s[0]=1; #10;
+ 
+   
+    end
+endmodule

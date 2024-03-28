@@ -1,0 +1,169 @@
+
+module clockDivider(input logic clk, output logic outClk);
+     logic [31:0] ctr = 1;
+     logic temporaryClk = 0;
+     always @ (posedge clk)
+        begin
+            if(ctr == 50000000)
+                begin
+                     ctr <= 0;
+                    temporaryClk = ~temporaryClk;
+                 end
+             else
+                ctr <= ctr + 1;
+         end
+      assign outClk = temporaryClk;
+ endmodule
+
+module multiplexer(
+    input logic a, b, select,
+    output logic o
+    );
+    
+        always_comb 
+        begin 
+            if( !select )
+                o = a;
+            else 
+                o = b;    
+        end
+endmodule 
+
+module D_ff(
+    input logic D, clk, reset,
+    output logic Q
+);
+    always_ff @( posedge clk )
+    begin 
+    if( reset )
+        Q <= 0;
+    else
+        Q <= D;
+    end
+endmodule 
+
+module full_adder(
+    input logic A, B, Cin,
+    output logic Sum, Cout 
+);
+    
+    assign Sum = Cin ^ ( A ^ B );
+    assign Cout = ( ( A ^ B ) & Cin ) | ( A & B );
+endmodule 
+
+module shift_register( 
+    input logic [7:0] D, I, clk, load, reset, 
+    output logic [7:0]O2
+
+);
+
+    logic [7:0] O;
+   
+    multiplexer mux1( I, D[7],load, O[7] );
+    D_ff ff1( O[7], clk, reset, O2[7] );
+    multiplexer mux2( O2[7], D[6], load, O[6] );
+    D_ff ff2( O[6], clk, reset, O2[6] );
+    multiplexer mux3( O2[6], D[5], load, O[5] );
+    D_ff ff3( O[5], clk, reset, O2[5] );
+    multiplexer mux4( O2[5], D[4], load, O[4] );
+    D_ff ff4( O[4], clk, reset, O2[4] );
+    multiplexer mux5( O2[4], D[3], load, O[3] );
+    D_ff ff5( O[3], clk, reset, O2[3] );
+    multiplexer mux6( O2[3], D[2], load, O[2] );
+    D_ff ff6( O[2], clk, reset, O2[2] );
+    multiplexer mux7( O2[2], D[1], load, O[1] );
+    D_ff ff7( O[1], clk, reset, O2[1] );
+    multiplexer mux8( O2[1], D[0], load, O[0] );
+    D_ff ff8( O[0], clk, reset, O2[0] );
+    
+endmodule 
+
+
+
+module serial_adder(
+    input logic [7:0] A, [7:0] B, input logic shift, clkx, load, reset, 
+    output logic [7:0] Sum
+    );
+    logic loadx, Q, Summx, Cout; 
+    logic [7:0] OA; 
+    logic [7:0] OB;
+    //logic [7:0] OSum;    
+    logic I = 0;
+    logic [7:0] Sumx; 
+    assign  Sumx = 8'b00000000;
+
+    clockDivider clkDiv (clkx,clk);
+    always_ff @( posedge clk ) 
+    begin
+        if( shift == 1 & load == 0 )  loadx = 0;
+        else if( load == 1 ) begin loadx  = 1; end
+    end
+    
+    
+
+    shift_register regA( A, I, clk, loadx, reset, OA );
+    shift_register regB( B, I, clk, loadx, reset, OB );
+    full_adder fa( OA[0], OB[0], Q, Summx, Cout );
+    D_ff ff(Cout, clk, reset, Q);
+    shift_register regOut( Sumx, Summx, clk, loadx, reset, Sum );
+endmodule
+// testbench for shift register
+module testbench(
+
+    );
+ logic [7:0] D;
+ logic I, clk, load, reset;
+ logic [7:0]Q;
+
+shift_register uut( D, I, clk, load, reset ,Q );
+
+always begin 
+clk = 0; #2.5;
+clk =1; #2.5;
+end
+initial begin 
+
+ I =0; #5;
+ reset = 1;#5;
+ reset = 0; #5;
+  D = 8'b01010101;
+ load = 1; #5;
+ load = 0; #5;
+
+ 
+end
+
+
+endmodule
+// testbench for serial adder
+
+module testbench(
+
+    );
+     logic [7:0] A, B;
+     logic shift, load, reset, clk; 
+     logic [7:0] Sum;
+
+serial_adder uut( A, B, shift, clk, load, reset , Sum );
+
+always begin 
+clk = 0; #2.5;
+
+clk =1; #2.5;
+shift = 0; #5;
+shift = 1; #5;
+end
+initial begin 
+
+ reset = 1;#5;
+ reset = 0; #5;
+  A = 8'b10101010;
+  B = 8'b11001101;
+ load = 1; #5;
+ load = 0; #5;
+
+ 
+end
+
+
+endmodule

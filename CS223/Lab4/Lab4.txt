@@ -1,0 +1,108 @@
+Code 
+
+module clockDivider(input logic clk, output logic outClk);
+     logic [31:0] ctr = 1;
+     logic temporaryClk = 0;
+     always @ (posedge clk)
+        begin
+            if(ctr == 300000000)
+                begin
+                     ctr <= 0;
+                    temporaryClk = ~temporaryClk;
+                 end
+             else
+                ctr <= ctr + 1;
+         end
+      assign outClk = temporaryClk;
+ endmodule
+
+
+module trafficsystem( input logic Sa, Sb, clk, reset,
+                           output logic [ 5:0 ] TL );
+
+    logic outClk;
+   
+    typedef enum logic [ 2:0 ] { s0, s1, s2, s3, s4, s5, s6, s7 } statetype;
+    statetype state, nextstate;
+    
+   clockDivider fd( clk,  outClk );
+    //assign outClk = clk;
+    
+    always_ff @ ( posedge outClk )
+    begin 
+        if( reset )
+            state <= s0;
+        else
+            state <= nextstate;   
+    end    
+    always_comb
+    begin
+        case( state )
+            s0: if (  ~Sb ) nextstate = s0;
+                else nextstate = s1;
+            s1: if( Sa || Sb) nextstate = s2;
+                else nextstate = s0;
+            s2: if( Sa || Sb) nextstate = s3;
+                else nextstate = s0;
+            s3: if( Sa || Sb) nextstate = s4;
+                else nextstate = s0;
+            s4: if( ~Sa && Sb ) nextstate = s4;
+                else if( Sa ) nextstate = s5;
+                else nextstate = s0;
+            s5: if( Sa || Sb) nextstate = s6;
+                else nextstate = s0;
+            s6: if( Sa || Sb) nextstate = s7;
+                else nextstate = s0;
+            s7: nextstate = s0;
+        endcase
+    end
+
+    always_comb
+    begin
+        case( state )
+        s0: TL = 6'b011111;
+        s1: TL = 6'b001111;
+        s2: TL = 6'b111111;
+        s3: TL = 6'b111001;
+        s4: TL = 6'b111011;
+        s5: TL = 6'b111001;
+        s6: TL = 6'b111111;
+        s7: TL = 6'b001111;
+        endcase
+    end     
+endmodule
+
+
+
+
+Testbench
+
+module testbench();
+    
+     logic Sa, Sb, clk, reset; 
+    logic  [5:0]TL;
+     
+     trafficsystem uut( Sa, Sb, clk, reset, TL );
+
+    always 
+    begin 
+    clk=1; #5; clk=0; #5;
+    end
+   
+  initial begin
+  Sa = 1; Sb=0; #5;
+   reset = 1;
+    #100;
+    reset = 0;
+    #100;
+    
+    Sa=1; Sb=0;  #50;
+    Sa=0; Sb=1; #50;
+    Sa=1; ; #50;
+   
+  
+    
+    end
+    
+endmodule
+
